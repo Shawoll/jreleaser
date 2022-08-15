@@ -36,6 +36,7 @@ import org.jreleaser.gradle.plugin.dsl.Distribution
 import org.jreleaser.gradle.plugin.dsl.Download
 import org.jreleaser.gradle.plugin.dsl.Environment
 import org.jreleaser.gradle.plugin.dsl.Files
+import org.jreleaser.gradle.plugin.dsl.Hooks
 import org.jreleaser.gradle.plugin.dsl.Packagers
 import org.jreleaser.gradle.plugin.dsl.Platform
 import org.jreleaser.gradle.plugin.dsl.Project
@@ -49,6 +50,7 @@ import org.jreleaser.gradle.plugin.internal.dsl.DistributionImpl
 import org.jreleaser.gradle.plugin.internal.dsl.DownloadImpl
 import org.jreleaser.gradle.plugin.internal.dsl.EnvironmentImpl
 import org.jreleaser.gradle.plugin.internal.dsl.FilesImpl
+import org.jreleaser.gradle.plugin.internal.dsl.HooksImpl
 import org.jreleaser.gradle.plugin.internal.dsl.PackagersImpl
 import org.jreleaser.gradle.plugin.internal.dsl.PlatformImpl
 import org.jreleaser.gradle.plugin.internal.dsl.ProjectImpl
@@ -61,6 +63,7 @@ import org.kordamp.gradle.util.ConfigureUtil
 
 import javax.inject.Inject
 
+import static org.jreleaser.util.StringUtils.isBlank
 import static org.jreleaser.util.StringUtils.isNotBlank
 
 /**
@@ -75,6 +78,7 @@ class JReleaserExtensionImpl implements JReleaserExtension {
     final Property<Boolean> dryrun
     final Property<Boolean> gitRootSearch
     final EnvironmentImpl environment
+    final HooksImpl hooks
     final ProjectImpl project
     final PlatformImpl platform
     final ReleaseImpl release
@@ -102,6 +106,7 @@ class JReleaserExtensionImpl implements JReleaserExtension {
         dryrun = objects.property(Boolean).convention(false)
         gitRootSearch = objects.property(Boolean).convention(false)
         environment = objects.newInstance(EnvironmentImpl, objects)
+        hooks = objects.newInstance(HooksImpl, objects)
         project = objects.newInstance(ProjectImpl, objects, nameProvider, descriptionProvider, versionProvider)
         platform = objects.newInstance(PlatformImpl, objects)
         release = objects.newInstance(ReleaseImpl, objects)
@@ -133,6 +138,11 @@ class JReleaserExtensionImpl implements JReleaserExtension {
     @Override
     void environment(Action<? super Environment> action) {
         action.execute(environment)
+    }
+
+    @Override
+    void hooks(Action<? super Hooks> action) {
+        action.execute(hooks)
     }
 
     @Override
@@ -201,6 +211,11 @@ class JReleaserExtensionImpl implements JReleaserExtension {
     }
 
     @Override
+    void hooks(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Hooks) Closure<Void> action) {
+        ConfigureUtil.configure(action, hooks)
+    }
+
+    @Override
     void project(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Project) Closure<Void> action) {
         ConfigureUtil.configure(action, project)
     }
@@ -264,6 +279,9 @@ class JReleaserExtensionImpl implements JReleaserExtension {
     JReleaserModel toModel(org.gradle.api.Project gradleProject, JReleaserLogger logger) {
         if (configFile.present) {
             JReleaserModel jreleaser = ContextCreator.resolveModel(logger, configFile.asFile.get().toPath())
+            if (isBlank(jreleaser.project.name)) jreleaser.project.name = project.name.orNull
+            if (isBlank(jreleaser.project.version)) jreleaser.project.version = project.version.orNull
+            if (isBlank(jreleaser.project.description)) jreleaser.project.description = project.description.orNull
             jreleaser.environment.propertiesSource = new org.jreleaser.model.Environment.MapPropertiesSource(
                 filterProperties(project.properties))
             return jreleaser
@@ -271,6 +289,7 @@ class JReleaserExtensionImpl implements JReleaserExtension {
 
         JReleaserModel jreleaser = new JReleaserModel()
         jreleaser.environment = environment.toModel(gradleProject)
+        jreleaser.hooks = hooks.toModel()
         jreleaser.project = project.toModel()
         jreleaser.platform = platform.toModel()
         jreleaser.release = release.toModel()
@@ -294,7 +313,8 @@ class JReleaserExtensionImpl implements JReleaserExtension {
 
             def val = value
             if (value instanceof Provider) {
-                val = ((Provider) value).get()
+                Provider provider = (Provider) value
+                val = provider.present ? provider.get() : null
             }
 
             if (value instanceof CharSequence ||

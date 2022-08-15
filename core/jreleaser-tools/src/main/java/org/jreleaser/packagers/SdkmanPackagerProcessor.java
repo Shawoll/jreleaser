@@ -101,14 +101,14 @@ public class SdkmanPackagerProcessor extends AbstractPackagerProcessor<Sdkman> {
                     break;
             }
 
-            sdkman.setPublished(true);
+            sdkman.mutate(() -> sdkman.setPublished(true));
         } catch (SdkmanException e) {
             throw new PackagerProcessingException(e);
         }
     }
 
     @Override
-    protected void fillPackagerProperties(Map<String, Object> props, Distribution distribution) throws PackagerProcessingException {
+    protected void fillPackagerProperties(Map<String, Object> props, Distribution distribution, ProcessingStep processingStep) throws PackagerProcessingException {
         props.put(KEY_SDKMAN_CANDIDATE, packager.getCandidate());
         props.put(KEY_SDKMAN_RELEASE_NOTES_URL, resolveTemplate(packager.getReleaseNotesUrl(), props));
     }

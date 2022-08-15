@@ -216,6 +216,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "diakogiannis",
+      "name": "Alexius DIAKOGIANNIS",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20904915?v=4",
+      "profile": "http://www.jee.gr",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "margarita-nedzelska-sonarsource",
+      "name": "margarita-nedzelska-sonarsource",
+      "avatar_url": "https://avatars.githubusercontent.com/u/70522623?v=4",
+      "profile": "https://github.com/margarita-nedzelska-sonarsource",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -23,7 +23,9 @@ import feign.QueryMap;
 import feign.RequestLine;
 import feign.form.FormData;
 import org.jreleaser.infra.nativeimage.annotations.ProxyConfig;
+import org.jreleaser.sdk.gitea.internal.Page;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -77,4 +79,20 @@ public interface GiteaAPI {
     @RequestLine("GET /users/search")
     @Headers("Content-Type: application/json")
     GtSearchUser searchUser(@QueryMap Map<String, String> q);
+
+    @RequestLine("GET /repos/{owner}/{repo}/releases")
+    @Headers("Content-Type: application/json")
+    Page<List<GtRelease>> listReleases(@Param("owner") String owner, @Param("repo") String repo, @QueryMap Map<String, Object> q);
+
+    @RequestLine("GET /repos/{owner}/{repo}/branches")
+    @Headers("Content-Type: application/json")
+    Page<List<GtBranch>> listBranches(@Param("owner") String owner, @Param("repo") String repo, @QueryMap Map<String, Object> q);
+
+    @RequestLine("GET /repos/{owner}/{repo}/releases/{releaseId}/assets")
+    @Headers("Content-Type: application/json")
+    List<GtAsset> listAssets(@Param("owner") String owner, @Param("repo") String repo, @Param("releaseId") Integer releaseId);
+
+    @RequestLine("DELETE /repos/{owner}/{repo}/releases/{releaseId}/assets/{assetId}")
+    @Headers("Content-Type: application/json")
+    void deleteAsset(@Param("owner") String owner, @Param("repo") String repo, @Param("releaseId") Integer releaseId, @Param("assetId") Integer assetId);
 }

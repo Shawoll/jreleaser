@@ -25,6 +25,8 @@ import java.util.Map;
  * @since 0.1.0
  */
 public class Packagers<S extends Packagers<S>> extends AbstractModelObject<S> implements Domain {
+    protected final AppImage appimage = new AppImage();
+    protected final Asdf asdf = new Asdf();
     protected final Brew brew = new Brew();
     protected final Chocolatey chocolatey = new Chocolatey();
     protected final Docker docker = new Docker();
@@ -37,7 +39,9 @@ public class Packagers<S extends Packagers<S>> extends AbstractModelObject<S> im
     protected final Spec spec = new Spec();
 
     public boolean hasEnabledPackagers() {
-        return brew.isEnabled() ||
+        return appimage.isEnabled() ||
+            asdf.isEnabled() ||
+            brew.isEnabled() ||
             chocolatey.isEnabled() ||
             docker.isEnabled() ||
             gofish.isEnabled() ||
@@ -50,7 +54,27 @@ public class Packagers<S extends Packagers<S>> extends AbstractModelObject<S> im
     }
 
     @Override
+    public void freeze() {
+        super.freeze();
+        appimage.freeze();
+        asdf.freeze();
+        brew.freeze();
+        chocolatey.freeze();
+        docker.freeze();
+        gofish.freeze();
+        jbang.freeze();
+        macports.freeze();
+        scoop.freeze();
+        sdkman.freeze();
+        snap.freeze();
+        spec.freeze();
+    }
+
+    @Override
     public void merge(S packagers) {
+        freezeCheck();
+        setAppImage(packagers.appimage);
+        setAsdf(packagers.asdf);
         setBrew(packagers.brew);
         setChocolatey(packagers.chocolatey);
         setDocker(packagers.docker);
@@ -61,6 +85,22 @@ public class Packagers<S extends Packagers<S>> extends AbstractModelObject<S> im
         setSdkman(packagers.sdkman);
         setSnap(packagers.snap);
         setSpec(packagers.spec);
+    }
+
+    public AppImage getAppImage() {
+        return appimage;
+    }
+
+    public void setAppImage(AppImage appimage) {
+        this.appimage.merge(appimage);
+    }
+
+    public Asdf getAsdf() {
+        return asdf;
+    }
+
+    public void setAsdf(Asdf asdf) {
+        this.asdf.merge(asdf);
     }
 
     public Brew getBrew() {
@@ -146,6 +186,8 @@ public class Packagers<S extends Packagers<S>> extends AbstractModelObject<S> im
     @Override
     public Map<String, Object> asMap(boolean full) {
         Map<String, Object> map = new LinkedHashMap<>();
+        map.putAll(appimage.asMap(full));
+        map.putAll(asdf.asMap(full));
         map.putAll(brew.asMap(full));
         map.putAll(chocolatey.asMap(full));
         map.putAll(docker.asMap(full));

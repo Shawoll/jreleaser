@@ -31,7 +31,7 @@ import static org.jreleaser.model.Distribution.DistributionType.JAVA_BINARY;
 import static org.jreleaser.model.Distribution.DistributionType.JLINK;
 import static org.jreleaser.model.Distribution.DistributionType.NATIVE_IMAGE;
 import static org.jreleaser.model.Distribution.DistributionType.NATIVE_PACKAGE;
-import static org.jreleaser.util.CollectionUtils.newSet;
+import static org.jreleaser.util.CollectionUtils.setOf;
 import static org.jreleaser.util.FileType.DMG;
 import static org.jreleaser.util.FileType.ZIP;
 import static org.jreleaser.util.StringUtils.isBlank;
@@ -50,12 +50,12 @@ public class Macports extends AbstractRepositoryPackager<Macports> {
     private static final Map<Distribution.DistributionType, Set<String>> SUPPORTED = new LinkedHashMap<>();
 
     static {
-        Set<String> extensions = newSet(ZIP.extension());
+        Set<String> extensions = setOf(ZIP.extension());
         SUPPORTED.put(BINARY, extensions);
         SUPPORTED.put(JAVA_BINARY, extensions);
         SUPPORTED.put(JLINK, extensions);
         SUPPORTED.put(NATIVE_IMAGE, extensions);
-        SUPPORTED.put(NATIVE_PACKAGE, newSet(DMG.extension()));
+        SUPPORTED.put(NATIVE_PACKAGE, setOf(DMG.extension()));
     }
 
     private final List<String> categories = new ArrayList<>();
@@ -70,7 +70,14 @@ public class Macports extends AbstractRepositoryPackager<Macports> {
     }
 
     @Override
+    public void freeze() {
+        super.freeze();
+        repository.freeze();
+    }
+
+    @Override
     public void merge(Macports macports) {
+        freezeCheck();
         super.merge(macports);
         this.packageName = merge(this.packageName, macports.packageName);
         this.revision = merge(this.revision, macports.revision);
@@ -97,6 +104,7 @@ public class Macports extends AbstractRepositoryPackager<Macports> {
     }
 
     public void setPackageName(String packageName) {
+        freezeCheck();
         this.packageName = packageName;
     }
 
@@ -105,6 +113,7 @@ public class Macports extends AbstractRepositoryPackager<Macports> {
     }
 
     public void setRevision(Integer revision) {
+        freezeCheck();
         this.revision = revision;
     }
 
@@ -117,19 +126,21 @@ public class Macports extends AbstractRepositoryPackager<Macports> {
     }
 
     public List<String> getCategories() {
-        return categories;
+        return freezeWrap(categories);
     }
 
     public void setCategories(List<String> categories) {
+        freezeCheck();
         this.categories.clear();
         this.categories.addAll(categories);
     }
 
     public List<String> getMaintainers() {
-        return maintainers;
+        return freezeWrap(maintainers);
     }
 
     public void setMaintainers(List<String> maintainers) {
+        freezeCheck();
         this.maintainers.clear();
         this.maintainers.addAll(maintainers);
     }
@@ -162,7 +173,7 @@ public class Macports extends AbstractRepositoryPackager<Macports> {
 
     @Override
     public Set<String> getSupportedExtensions(Distribution distribution) {
-        return SUPPORTED.getOrDefault(distribution.getType(), Collections.emptySet());
+        return Collections.unmodifiableSet(SUPPORTED.getOrDefault(distribution.getType(), Collections.emptySet()));
     }
 
     @Override

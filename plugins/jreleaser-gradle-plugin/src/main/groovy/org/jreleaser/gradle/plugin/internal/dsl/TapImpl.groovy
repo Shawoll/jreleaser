@@ -24,6 +24,8 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
 import org.jreleaser.gradle.plugin.dsl.Tap
 import org.jreleaser.model.Active
+import org.jreleaser.model.AppImage
+import org.jreleaser.model.Asdf
 import org.jreleaser.model.Brew
 import org.jreleaser.model.Chocolatey
 import org.jreleaser.model.Gofish
@@ -92,9 +94,21 @@ class TapImpl implements Tap {
         if (name.present) into.name = name.get()
         if (tagName.present) into.tagName = tagName.get()
         if (branch.present) into.branch = branch.get()
-        if (username.present) into.name = username.get()
+        if (username.present) into.username = username.get()
         if (token.present) into.token = token.get()
         if (commitMessage.present) into.commitMessage = commitMessage.get()
+    }
+
+    AppImage.AppImageRepository toAppImageRepository() {
+        AppImage.AppImageRepository tap = new AppImage.AppImageRepository()
+        convert(tap)
+        tap
+    }
+
+    Asdf.AsdfRepository toAsdfRepository() {
+        Asdf.AsdfRepository tap = new Asdf.AsdfRepository()
+        convert(tap)
+        tap
     }
 
     Brew.HomebrewTap toHomebrewTap() {

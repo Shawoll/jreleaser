@@ -28,7 +28,7 @@ import static org.jreleaser.model.Distribution.DistributionType.BINARY;
 import static org.jreleaser.model.Distribution.DistributionType.JAVA_BINARY;
 import static org.jreleaser.model.Distribution.DistributionType.JLINK;
 import static org.jreleaser.model.Distribution.DistributionType.NATIVE_IMAGE;
-import static org.jreleaser.util.CollectionUtils.newSet;
+import static org.jreleaser.util.CollectionUtils.setOf;
 import static org.jreleaser.util.FileType.TAR;
 import static org.jreleaser.util.FileType.TAR_GZ;
 import static org.jreleaser.util.FileType.TAR_XZ;
@@ -49,7 +49,7 @@ public class Gofish extends AbstractRepositoryPackager<Gofish> {
     private static final Map<Distribution.DistributionType, Set<String>> SUPPORTED = new LinkedHashMap<>();
 
     static {
-        Set<String> extensions = newSet(
+        Set<String> extensions = setOf(
             TAR_GZ.extension(),
             TAR_XZ.extension(),
             TGZ.extension(),
@@ -71,6 +71,7 @@ public class Gofish extends AbstractRepositoryPackager<Gofish> {
 
     @Override
     public void merge(Gofish spec) {
+        freezeCheck();
         super.merge(spec);
         setRepository(spec.repository);
     }
@@ -109,7 +110,7 @@ public class Gofish extends AbstractRepositoryPackager<Gofish> {
 
     @Override
     public Set<String> getSupportedExtensions(Distribution distribution) {
-        return SUPPORTED.getOrDefault(distribution.getType(), Collections.emptySet());
+        return Collections.unmodifiableSet(SUPPORTED.getOrDefault(distribution.getType(), Collections.emptySet()));
     }
 
     @Override

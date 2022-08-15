@@ -20,6 +20,7 @@ package org.jreleaser.model;
 import org.jreleaser.util.PlatformUtils;
 
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,15 +50,18 @@ public class Archive extends AbstractAssembler<Archive> {
     }
 
     public void setDistributionType(Distribution.DistributionType distributionType) {
+        freezeCheck();
         this.distributionType = distributionType;
     }
 
     public void setDistributionType(String distributionType) {
+        freezeCheck();
         this.distributionType = Distribution.DistributionType.of(distributionType);
     }
 
     @Override
     public void merge(Archive archive) {
+        freezeCheck();
         super.merge(archive);
         this.archiveName = merge(archive.archiveName, archive.archiveName);
         this.distributionType = merge(archive.distributionType, archive.distributionType);
@@ -80,6 +84,7 @@ public class Archive extends AbstractAssembler<Archive> {
     }
 
     public void setArchiveName(String archiveName) {
+        freezeCheck();
         this.archiveName = archiveName;
     }
 
@@ -92,23 +97,27 @@ public class Archive extends AbstractAssembler<Archive> {
     }
 
     public void setAttachPlatform(Boolean attachPlatform) {
+        freezeCheck();
         this.attachPlatform = attachPlatform;
     }
 
     public Set<Format> getFormats() {
-        return formats;
+        return freezeWrap(formats);
     }
 
     public void setFormats(Set<Format> formats) {
+        freezeCheck();
         this.formats.clear();
         this.formats.addAll(formats);
     }
 
     public void addFormat(Format format) {
+        freezeCheck();
         this.formats.add(format);
     }
 
     public void addFormat(String str) {
+        freezeCheck();
         this.formats.add(Format.of(str));
     }
 
@@ -148,7 +157,7 @@ public class Archive extends AbstractAssembler<Archive> {
         public static org.jreleaser.model.Archive.Format of(String str) {
             if (isBlank(str)) return null;
             return org.jreleaser.model.Archive.Format
-                .valueOf(str.toUpperCase().trim()
+                .valueOf(str.toUpperCase(Locale.ENGLISH).trim()
                     .replace(".", "_"));
         }
     }

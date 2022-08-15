@@ -22,9 +22,11 @@ import org.jreleaser.util.FileType;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.toList;
@@ -51,12 +53,18 @@ public abstract class AbstractPackager<S extends AbstractPackager<S>> extends Ab
 
     @Override
     public void merge(S packager) {
+        freezeCheck();
         this.active = merge(this.active, packager.active);
         this.enabled = merge(this.enabled, packager.enabled);
         this.continueOnError = merge(this.continueOnError, packager.continueOnError);
         this.downloadUrl = merge(this.downloadUrl, packager.downloadUrl);
         this.failed = packager.failed;
         setExtraProperties(merge(this.extraProperties, packager.extraProperties));
+    }
+
+    @Override
+    public Set<Stereotype> getSupportedStereotypes() {
+        return EnumSet.allOf(Stereotype.class);
     }
 
     @Override
@@ -105,6 +113,7 @@ public abstract class AbstractPackager<S extends AbstractPackager<S>> extends Ab
 
     @Override
     public void disable() {
+        freezeCheck();
         active = Active.NEVER;
         enabled = false;
     }
@@ -116,6 +125,7 @@ public abstract class AbstractPackager<S extends AbstractPackager<S>> extends Ab
 
     @Override
     public void setContinueOnError(Boolean continueOnError) {
+        freezeCheck();
         this.continueOnError = continueOnError;
     }
 
@@ -125,6 +135,7 @@ public abstract class AbstractPackager<S extends AbstractPackager<S>> extends Ab
     }
 
     public boolean resolveEnabled(Project project) {
+        freezeCheck();
         if (null == active) {
             active = Active.NEVER;
         }
@@ -134,6 +145,7 @@ public abstract class AbstractPackager<S extends AbstractPackager<S>> extends Ab
     }
 
     public boolean resolveEnabled(Project project, Distribution distribution) {
+        freezeCheck();
         if (null == active) {
             active = Active.NEVER;
         }
@@ -151,12 +163,13 @@ public abstract class AbstractPackager<S extends AbstractPackager<S>> extends Ab
 
     @Override
     public void setActive(Active active) {
+        freezeCheck();
         this.active = active;
     }
 
     @Override
     public void setActive(String str) {
-        this.active = Active.of(str);
+        setActive(Active.of(str));
     }
 
     @Override
@@ -171,17 +184,19 @@ public abstract class AbstractPackager<S extends AbstractPackager<S>> extends Ab
 
     @Override
     public Map<String, Object> getExtraProperties() {
-        return extraProperties;
+        return freezeWrap(extraProperties);
     }
 
     @Override
     public void setExtraProperties(Map<String, Object> extraProperties) {
+        freezeCheck();
         this.extraProperties.clear();
         this.extraProperties.putAll(extraProperties);
     }
 
     @Override
     public void addExtraProperties(Map<String, Object> extraProperties) {
+        freezeCheck();
         this.extraProperties.putAll(extraProperties);
     }
 
@@ -192,6 +207,7 @@ public abstract class AbstractPackager<S extends AbstractPackager<S>> extends Ab
 
     @Override
     public void setDownloadUrl(String downloadUrl) {
+        freezeCheck();
         this.downloadUrl = downloadUrl;
     }
 

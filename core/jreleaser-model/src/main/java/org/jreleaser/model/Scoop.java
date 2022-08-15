@@ -30,7 +30,7 @@ import static org.jreleaser.model.Distribution.DistributionType.JLINK;
 import static org.jreleaser.model.Distribution.DistributionType.NATIVE_IMAGE;
 import static org.jreleaser.model.Distribution.DistributionType.NATIVE_PACKAGE;
 import static org.jreleaser.model.Distribution.DistributionType.SINGLE_JAR;
-import static org.jreleaser.util.CollectionUtils.newSet;
+import static org.jreleaser.util.CollectionUtils.setOf;
 import static org.jreleaser.util.FileType.JAR;
 import static org.jreleaser.util.FileType.MSI;
 import static org.jreleaser.util.FileType.ZIP;
@@ -48,13 +48,13 @@ public class Scoop extends AbstractRepositoryPackager<Scoop> {
     private static final Map<Distribution.DistributionType, Set<String>> SUPPORTED = new LinkedHashMap<>();
 
     static {
-        Set<String> extensions = newSet(ZIP.extension());
+        Set<String> extensions = setOf(ZIP.extension());
         SUPPORTED.put(BINARY, extensions);
         SUPPORTED.put(JAVA_BINARY, extensions);
         SUPPORTED.put(JLINK, extensions);
         SUPPORTED.put(NATIVE_IMAGE, extensions);
-        SUPPORTED.put(NATIVE_PACKAGE, newSet(MSI.extension()));
-        SUPPORTED.put(SINGLE_JAR, newSet(JAR.extension()));
+        SUPPORTED.put(NATIVE_PACKAGE, setOf(MSI.extension()));
+        SUPPORTED.put(SINGLE_JAR, setOf(JAR.extension()));
     }
 
     private final ScoopBucket bucket = new ScoopBucket();
@@ -67,7 +67,14 @@ public class Scoop extends AbstractRepositoryPackager<Scoop> {
     }
 
     @Override
+    public void freeze() {
+        super.freeze();
+        bucket.freeze();
+    }
+
+    @Override
     public void merge(Scoop scoop) {
+        freezeCheck();
         super.merge(scoop);
         this.packageName = merge(this.packageName, scoop.packageName);
         this.checkverUrl = merge(this.checkverUrl, scoop.checkverUrl);
@@ -80,6 +87,7 @@ public class Scoop extends AbstractRepositoryPackager<Scoop> {
     }
 
     public void setPackageName(String packageName) {
+        freezeCheck();
         this.packageName = packageName;
     }
 
@@ -88,6 +96,7 @@ public class Scoop extends AbstractRepositoryPackager<Scoop> {
     }
 
     public void setCheckverUrl(String checkverUrl) {
+        freezeCheck();
         this.checkverUrl = checkverUrl;
     }
 
@@ -96,6 +105,7 @@ public class Scoop extends AbstractRepositoryPackager<Scoop> {
     }
 
     public void setAutoupdateUrl(String autoupdateUrl) {
+        freezeCheck();
         this.autoupdateUrl = autoupdateUrl;
     }
 
@@ -133,7 +143,7 @@ public class Scoop extends AbstractRepositoryPackager<Scoop> {
 
     @Override
     public Set<String> getSupportedExtensions(Distribution distribution) {
-        return SUPPORTED.getOrDefault(distribution.getType(), Collections.emptySet());
+        return Collections.unmodifiableSet(SUPPORTED.getOrDefault(distribution.getType(), Collections.emptySet()));
     }
 
     @Override

@@ -34,8 +34,8 @@ abstract class AbstractAnnouncer<S extends AbstractAnnouncer<S>> extends Abstrac
     @JsonIgnore
     protected boolean enabled;
     protected Active active;
-    protected int connectTimeout;
-    protected int readTimeout;
+    protected Integer connectTimeout;
+    protected Integer readTimeout;
 
     protected AbstractAnnouncer(String name) {
         this.name = name;
@@ -43,6 +43,7 @@ abstract class AbstractAnnouncer<S extends AbstractAnnouncer<S>> extends Abstrac
 
     @Override
     public void merge(S announcer) {
+        freezeCheck();
         this.active = merge(this.active, announcer.active);
         this.enabled = merge(this.enabled, announcer.enabled);
         this.connectTimeout = merge(this.connectTimeout, announcer.connectTimeout);
@@ -84,12 +85,13 @@ abstract class AbstractAnnouncer<S extends AbstractAnnouncer<S>> extends Abstrac
 
     @Override
     public void setActive(Active active) {
+        freezeCheck();
         this.active = active;
     }
 
     @Override
     public void setActive(String str) {
-        this.active = Active.of(str);
+        setActive(Active.of(str));
     }
 
     @Override
@@ -108,38 +110,42 @@ abstract class AbstractAnnouncer<S extends AbstractAnnouncer<S>> extends Abstrac
     }
 
     @Override
-    public int getConnectTimeout() {
+    public Integer getConnectTimeout() {
         return connectTimeout;
     }
 
     @Override
-    public void setConnectTimeout(int connectTimeout) {
+    public void setConnectTimeout(Integer connectTimeout) {
+        freezeCheck();
         this.connectTimeout = connectTimeout;
     }
 
     @Override
-    public int getReadTimeout() {
+    public Integer getReadTimeout() {
         return readTimeout;
     }
 
     @Override
-    public void setReadTimeout(int readTimeout) {
+    public void setReadTimeout(Integer readTimeout) {
+        freezeCheck();
         this.readTimeout = readTimeout;
     }
 
     @Override
     public Map<String, Object> getExtraProperties() {
-        return extraProperties;
+        return freezeWrap(extraProperties);
     }
 
     @Override
     public void setExtraProperties(Map<String, Object> extraProperties) {
+        freezeCheck();
         this.extraProperties.clear();
         this.extraProperties.putAll(extraProperties);
     }
 
     @Override
     public void addExtraProperties(Map<String, Object> extraProperties) {
+        freezeCheck();
         this.extraProperties.putAll(extraProperties);
     }
 

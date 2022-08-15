@@ -47,6 +47,26 @@ public abstract class PackagersValidator extends Validator {
         Packagers packagers = model.getPackagers();
         Project project = model.getProject();
 
+        packagers.getAppImage().resolveEnabled(project);
+        packagers.getAppImage().getRepository().resolveEnabled(project);
+        validatePackager(context,
+            packagers.getAppImage(),
+            packagers.getAppImage().getRepository(),
+            errors);
+        if (packagers.getAppImage().getScreenshots().isEmpty()) {
+            packagers.getAppImage().setScreenshots(context.getModel().getProject().getScreenshots());
+        }
+        if (isBlank(packagers.getAppImage().getDeveloperName())) {
+            packagers.getAppImage().setDeveloperName(String.join(", ", project.getAuthors()));
+        }
+
+        packagers.getAsdf().resolveEnabled(project);
+        packagers.getAsdf().getRepository().resolveEnabled(project);
+        validatePackager(context,
+            packagers.getAsdf(),
+            packagers.getAsdf().getRepository(),
+            errors);
+
         packagers.getBrew().resolveEnabled(project);
         packagers.getBrew().getTap().resolveEnabled(project);
         validatePackager(context,
@@ -97,6 +117,9 @@ public abstract class PackagersValidator extends Validator {
             packagers.getMacports(),
             packagers.getMacports().getRepository(),
             errors);
+        if (packagers.getMacports().getMaintainers().isEmpty()) {
+            packagers.getMacports().getMaintainers().addAll(project.getMaintainers());
+        }
 
         packagers.getScoop().resolveEnabled(project);
         packagers.getScoop().getBucket().resolveEnabled(project);

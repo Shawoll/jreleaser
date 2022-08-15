@@ -21,16 +21,22 @@ project:
     Distribution files may additionally be published to be consumed by popular package managers
     such as Homebrew, Chocolatey, Snapcraft, or get ready to be launched via JBang. Releases
     may be announced in a variety of channels such as Twitter, Zulip, SDKMAN!, and more.
-  website: https://jreleaser.org
+  links:
+    homepage: https://jreleaser.org
+    faq: https://{{repoHost}}/{{repoOwner}}/{{repoName}}/discussions
+    donation: https://opencollective.com/jreleaser
   authors:
     - Andres Almiray
   license: Apache-2.0
+  inceptionYear: 2020
+  stereotype: cli
+  screenshots:
+    - url: https://jreleaser.org/images/app-full-release-command.png
+      caption: JReleaser in action
   java:
     groupId: org.jreleaser
     version: 8
     multiProject: true
-  extraProperties:
-    inceptionYear: 2020
   tags:
     - 'jreleaser'
     - 'release'
@@ -68,10 +74,6 @@ release:
           title: 'regex:^docs: update CONTRIBUTORS.md.*'
           order: -2
       categories:
-        - title: 'Merge'
-          labels:
-            - 'merge_pull'
-            - 'merge_branch'
         - title: '🌐 Translation'
           key: 'i18n'
           order: 70
@@ -89,11 +91,14 @@ release:
             - 'allcontributors2'
       hide:
         categories:
-          - 'Merge'
+          - 'merge'
           - 'allcontributors'
         contributors:
           - 'GitHub'
           - 'allcontributors'
+      replacers:
+        - search: 'i18n: '
+        - search: 'deps: '
 
 signing:
   active: always
@@ -282,6 +287,15 @@ distributions:
         transform: '{{distributionName}}/{{distributionName}}-{{projectEffectiveVersion}}.jar'
 
   jreleaser-standalone:
+    appImage:
+      active: always
+      componentId: org.jreleaser.cli
+      developerName: JReleaser
+      categories:
+        - Development
+      repository:
+        active: release
+        name: jreleaser-appimage
     brew:
       active: always
       formulaName: jreleaser

@@ -27,7 +27,9 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
+import org.jreleaser.gradle.plugin.dsl.AppImage
 import org.jreleaser.gradle.plugin.dsl.Artifact
+import org.jreleaser.gradle.plugin.dsl.Asdf
 import org.jreleaser.gradle.plugin.dsl.Brew
 import org.jreleaser.gradle.plugin.dsl.Chocolatey
 import org.jreleaser.gradle.plugin.dsl.Distribution
@@ -43,6 +45,7 @@ import org.jreleaser.gradle.plugin.dsl.Snap
 import org.jreleaser.gradle.plugin.dsl.Spec
 import org.jreleaser.model.Active
 import org.jreleaser.model.Distribution.DistributionType
+import org.jreleaser.model.Stereotype
 import org.kordamp.gradle.util.ConfigureUtil
 
 import javax.inject.Inject
@@ -60,12 +63,15 @@ class DistributionImpl implements Distribution {
     final Property<String> groupId
     final Property<String> artifactId
     final Property<Active> active
+    final Property<Stereotype> stereotype
     final Property<DistributionType> distributionType
     final ListProperty<String> tags
     final MapProperty<String, Object> extraProperties
     final ExecutableImpl executable
     final JavaImpl java
     final PlatformImpl platform
+    final AppImageImpl appImage
+    final AsdfImpl asdf
     final BrewImpl brew
     final ChocolateyImpl chocolatey
     final DockerImpl docker
@@ -82,6 +88,7 @@ class DistributionImpl implements Distribution {
     @Inject
     DistributionImpl(ObjectFactory objects) {
         active = objects.property(Active).convention(Providers.notDefined())
+        stereotype = objects.property(Stereotype).convention(Providers.notDefined())
         groupId = objects.property(String).convention(Providers.notDefined())
         artifactId = objects.property(String).convention(Providers.notDefined())
         distributionType = objects.property(DistributionType).convention(DistributionType.JAVA_BINARY)
@@ -100,6 +107,8 @@ class DistributionImpl implements Distribution {
         executable = objects.newInstance(ExecutableImpl, objects)
         java = objects.newInstance(JavaImpl, objects)
         platform = objects.newInstance(PlatformImpl, objects)
+        appImage = objects.newInstance(AppImageImpl, objects)
+        asdf = objects.newInstance(AsdfImpl, objects)
         brew = objects.newInstance(BrewImpl, objects)
         chocolatey = objects.newInstance(ChocolateyImpl, objects)
         docker = objects.newInstance(DockerImpl, objects)
@@ -116,6 +125,13 @@ class DistributionImpl implements Distribution {
     void setDistributionType(String str) {
         if (isNotBlank(str)) {
             this.distributionType.set(DistributionType.of(str.trim()))
+        }
+    }
+
+    @Override
+    void setStereotype(String str) {
+        if (isNotBlank(str)) {
+            stereotype.set(Stereotype.of(str.trim()))
         }
     }
 
@@ -144,6 +160,17 @@ class DistributionImpl implements Distribution {
     @Override
     void executable(Action<? super Executable> action) {
         action.execute(executable)
+    }
+
+    @Override
+    void appImage(Action<? super AppImage> action) {
+        action.execute(appImage)
+    }
+
+
+    @Override
+    void asdf(Action<? super Asdf> action) {
+        action.execute(asdf)
     }
 
     @Override
@@ -224,6 +251,16 @@ class DistributionImpl implements Distribution {
     }
 
     @Override
+    void appImage(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = AppImage) Closure<Void> action) {
+        ConfigureUtil.configure(action, appImage)
+    }
+
+    @Override
+    void asdf(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Asdf) Closure<Void> action) {
+        ConfigureUtil.configure(action, asdf)
+    }
+
+    @Override
     void brew(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Brew) Closure<Void> action) {
         ConfigureUtil.configure(action, brew)
     }
@@ -277,6 +314,7 @@ class DistributionImpl implements Distribution {
         org.jreleaser.model.Distribution distribution = new org.jreleaser.model.Distribution()
         distribution.name = name
         if (active.present) distribution.active = active.get()
+        if (stereotype.present) distribution.stereotype = stereotype.get()
         if (executable.isSet()) distribution.executable = executable.toModel()
         distribution.type = distributionType.get()
         distribution.java = java.toModel()
@@ -286,6 +324,8 @@ class DistributionImpl implements Distribution {
         }
         distribution.tags = (List<String>) tags.getOrElse([])
         if (extraProperties.present) distribution.extraProperties.putAll(extraProperties.get())
+        if (appImage.isSet()) distribution.appImage = appImage.toModel()
+        if (asdf.isSet()) distribution.asdf = asdf.toModel()
         if (brew.isSet()) distribution.brew = brew.toModel()
         if (chocolatey.isSet()) distribution.chocolatey = chocolatey.toModel()
         if (docker.isSet()) distribution.docker = docker.toModel()

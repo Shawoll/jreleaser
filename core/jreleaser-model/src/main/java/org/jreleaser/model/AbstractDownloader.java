@@ -39,15 +39,22 @@ abstract class AbstractDownloader<S extends AbstractDownloader<S>> extends Abstr
     @JsonIgnore
     protected boolean enabled;
     protected Active active;
-    protected int connectTimeout;
-    protected int readTimeout;
+    protected Integer connectTimeout;
+    protected Integer readTimeout;
 
     protected AbstractDownloader(String type) {
         this.type = type;
     }
 
     @Override
+    public void freeze() {
+        super.freeze();
+        assets.forEach(Asset::freeze);
+    }
+
+    @Override
     public void merge(S downloader) {
+        freezeCheck();
         this.name = merge(this.name, downloader.name);
         this.active = merge(this.active, downloader.active);
         this.enabled = merge(this.enabled, downloader.enabled);
@@ -87,6 +94,7 @@ abstract class AbstractDownloader<S extends AbstractDownloader<S>> extends Abstr
 
     @Override
     public void setName(String name) {
+        freezeCheck();
         this.name = name;
     }
 
@@ -97,12 +105,13 @@ abstract class AbstractDownloader<S extends AbstractDownloader<S>> extends Abstr
 
     @Override
     public void setActive(Active active) {
+        freezeCheck();
         this.active = active;
     }
 
     @Override
     public void setActive(String str) {
-        this.active = Active.of(str);
+        setActive(Active.of(str));
     }
 
     @Override
@@ -116,54 +125,60 @@ abstract class AbstractDownloader<S extends AbstractDownloader<S>> extends Abstr
     }
 
     @Override
-    public int getConnectTimeout() {
+    public Integer getConnectTimeout() {
         return connectTimeout;
     }
 
     @Override
-    public void setConnectTimeout(int connectTimeout) {
+    public void setConnectTimeout(Integer connectTimeout) {
+        freezeCheck();
         this.connectTimeout = connectTimeout;
     }
 
     @Override
-    public int getReadTimeout() {
+    public Integer getReadTimeout() {
         return readTimeout;
     }
 
     @Override
-    public void setReadTimeout(int readTimeout) {
+    public void setReadTimeout(Integer readTimeout) {
+        freezeCheck();
         this.readTimeout = readTimeout;
     }
 
     @Override
     public Map<String, Object> getExtraProperties() {
-        return extraProperties;
+        return freezeWrap(extraProperties);
     }
 
     @Override
     public void setExtraProperties(Map<String, Object> extraProperties) {
+        freezeCheck();
         this.extraProperties.clear();
         this.extraProperties.putAll(extraProperties);
     }
 
     @Override
     public void addExtraProperties(Map<String, Object> extraProperties) {
+        freezeCheck();
         this.extraProperties.putAll(extraProperties);
     }
 
     @Override
     public List<Asset> getAssets() {
-        return assets;
+        return freezeWrap(assets);
     }
 
     @Override
     public void setAssets(List<Asset> assets) {
+        freezeCheck();
         this.assets.clear();
         this.assets.addAll(assets);
     }
 
     @Override
     public void addAsset(Asset asset) {
+        freezeCheck();
         if (null != asset) {
             this.assets.add(asset);
         }

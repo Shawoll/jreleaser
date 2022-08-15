@@ -30,7 +30,7 @@ import static org.jreleaser.model.Distribution.DistributionType.BINARY;
 import static org.jreleaser.model.Distribution.DistributionType.JAVA_BINARY;
 import static org.jreleaser.model.Distribution.DistributionType.JLINK;
 import static org.jreleaser.model.Distribution.DistributionType.NATIVE_IMAGE;
-import static org.jreleaser.util.CollectionUtils.newSet;
+import static org.jreleaser.util.CollectionUtils.setOf;
 import static org.jreleaser.util.FileType.TAR;
 import static org.jreleaser.util.FileType.TAR_BZ2;
 import static org.jreleaser.util.FileType.TAR_GZ;
@@ -53,7 +53,7 @@ public class Spec extends AbstractRepositoryPackager<Spec> {
     private static final Map<Distribution.DistributionType, Set<String>> SUPPORTED = new LinkedHashMap<>();
 
     static {
-        Set<String> extensions = newSet(
+        Set<String> extensions = setOf(
             TAR_BZ2.extension(),
             TAR_GZ.extension(),
             TAR_XZ.extension(),
@@ -80,7 +80,14 @@ public class Spec extends AbstractRepositoryPackager<Spec> {
     }
 
     @Override
+    public void freeze() {
+        super.freeze();
+        repository.freeze();
+    }
+
+    @Override
     public void merge(Spec spec) {
+        freezeCheck();
         super.merge(spec);
         this.packageName = merge(this.packageName, spec.packageName);
         this.release = merge(this.release, spec.release);
@@ -93,6 +100,7 @@ public class Spec extends AbstractRepositoryPackager<Spec> {
     }
 
     public void setPackageName(String packageName) {
+        freezeCheck();
         this.packageName = packageName;
     }
 
@@ -101,6 +109,7 @@ public class Spec extends AbstractRepositoryPackager<Spec> {
     }
 
     public void setRelease(String release) {
+        freezeCheck();
         this.release = release;
     }
 
@@ -113,10 +122,11 @@ public class Spec extends AbstractRepositoryPackager<Spec> {
     }
 
     public List<String> getRequires() {
-        return requires;
+        return freezeWrap(requires);
     }
 
     public void setRequires(List<String> requires) {
+        freezeCheck();
         this.requires.clear();
         this.requires.addAll(requires);
     }
@@ -148,7 +158,7 @@ public class Spec extends AbstractRepositoryPackager<Spec> {
 
     @Override
     public Set<String> getSupportedExtensions(Distribution distribution) {
-        return SUPPORTED.getOrDefault(distribution.getType(), Collections.emptySet());
+        return Collections.unmodifiableSet(SUPPORTED.getOrDefault(distribution.getType(), Collections.emptySet()));
     }
 
     @Override

@@ -54,6 +54,7 @@ public class Glob extends AbstractModelObject<Glob> implements Domain, ExtraProp
 
     @Override
     public void merge(Glob glob) {
+        freezeCheck();
         this.pattern = merge(this.pattern, glob.pattern);
         this.platform = merge(this.platform, glob.platform);
         setExtraProperties(merge(this.extraProperties, glob.extraProperties));
@@ -66,17 +67,19 @@ public class Glob extends AbstractModelObject<Glob> implements Domain, ExtraProp
 
     @Override
     public Map<String, Object> getExtraProperties() {
-        return extraProperties;
+        return freezeWrap(extraProperties);
     }
 
     @Override
     public void setExtraProperties(Map<String, Object> extraProperties) {
+        freezeCheck();
         this.extraProperties.clear();
         this.extraProperties.putAll(extraProperties);
     }
 
     @Override
     public void addExtraProperties(Map<String, Object> extraProperties) {
+        freezeCheck();
         this.extraProperties.putAll(extraProperties);
     }
 
@@ -86,8 +89,8 @@ public class Glob extends AbstractModelObject<Glob> implements Domain, ExtraProp
 
     public Set<Artifact> getResolvedArtifactsPattern(JReleaserContext context) {
         if (null == artifacts) {
-            setPattern(Artifacts.resolveForGlob(getPattern(), context, this));
-            normalizePattern();
+            mutate(() -> setPattern(Artifacts.resolveForGlob(getPattern(), context, this)));
+            normalizePattern(resolveDirectory(context));
             artifacts = Artifacts.resolveFiles(context, resolveDirectory(context), Collections.singletonList(pattern));
             artifacts.forEach(artifact -> {
                 artifact.setPlatform(platform);
@@ -118,11 +121,12 @@ public class Glob extends AbstractModelObject<Glob> implements Domain, ExtraProp
     }
 
     public void setPattern(String pattern) {
+        freezeCheck();
         if (isBlank(pattern)) return;
         this.pattern = pattern.trim();
     }
 
-    private void normalizePattern() {
+    private void normalizePattern(Path basedir) {
         if (!pattern.startsWith(GLOB_PREFIX) && !pattern.startsWith(REGEX_PREFIX)) {
             this.pattern = GLOB_PREFIX + pattern;
         }
@@ -135,6 +139,8 @@ public class Glob extends AbstractModelObject<Glob> implements Domain, ExtraProp
             }
             if (!Paths.get(test).isAbsolute()) {
                 this.pattern = GLOB_PREFIX + "**" + File.separator + path;
+            } else {
+                this.pattern = GLOB_PREFIX + "**" + relativize(basedir, Paths.get(path));
             }
         } else {
             String path = this.pattern.substring(REGEX_PREFIX.length());
@@ -144,6 +150,8 @@ public class Glob extends AbstractModelObject<Glob> implements Domain, ExtraProp
             }
             if (!Paths.get(test).isAbsolute()) {
                 this.pattern = REGEX_PREFIX + ".*" + File.separator + path;
+            } else {
+                this.pattern = REGEX_PREFIX + ".*" + relativize(basedir, Paths.get(path));
             }
         }
 
@@ -152,11 +160,23 @@ public class Glob extends AbstractModelObject<Glob> implements Domain, ExtraProp
         }
     }
 
+    public Path relativize(Path base, Path other) {
+        Path p1 = base.toAbsolutePath();
+        Path p2 = other.toAbsolutePath();
+        Path p = p1.relativize(p2).normalize();
+        while (p != null && !p.endsWith("..")) {
+            p = p.getParent();
+        }
+
+        return base.resolve(p).resolve(p2).normalize();
+    }
+
     public String getPlatform() {
         return platform;
     }
 
     public void setPlatform(String platform) {
+        freezeCheck();
         this.platform = platform;
     }
 
@@ -165,6 +185,7 @@ public class Glob extends AbstractModelObject<Glob> implements Domain, ExtraProp
     }
 
     public void setDirectory(String directory) {
+        freezeCheck();
         this.directory = directory;
     }
 

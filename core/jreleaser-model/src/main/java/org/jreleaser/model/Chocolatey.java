@@ -30,7 +30,7 @@ import static org.jreleaser.model.Distribution.DistributionType.JAVA_BINARY;
 import static org.jreleaser.model.Distribution.DistributionType.JLINK;
 import static org.jreleaser.model.Distribution.DistributionType.NATIVE_IMAGE;
 import static org.jreleaser.model.Distribution.DistributionType.NATIVE_PACKAGE;
-import static org.jreleaser.util.CollectionUtils.newSet;
+import static org.jreleaser.util.CollectionUtils.setOf;
 import static org.jreleaser.util.Constants.HIDE;
 import static org.jreleaser.util.Constants.UNSET;
 import static org.jreleaser.util.FileType.EXE;
@@ -53,12 +53,12 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
     private static final Map<Distribution.DistributionType, Set<String>> SUPPORTED = new LinkedHashMap<>();
 
     static {
-        Set<String> extensions = newSet(ZIP.extension());
+        Set<String> extensions = setOf(ZIP.extension());
         SUPPORTED.put(BINARY, extensions);
         SUPPORTED.put(JAVA_BINARY, extensions);
         SUPPORTED.put(JLINK, extensions);
         SUPPORTED.put(NATIVE_IMAGE, extensions);
-        SUPPORTED.put(NATIVE_PACKAGE, newSet(EXE.extension(), MSI.extension()));
+        SUPPORTED.put(NATIVE_PACKAGE, setOf(EXE.extension(), MSI.extension()));
     }
 
     private final ChocolateyBucket bucket = new ChocolateyBucket();
@@ -76,7 +76,14 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
     }
 
     @Override
+    public void freeze() {
+        super.freeze();
+        bucket.freeze();
+    }
+
+    @Override
     public void merge(Chocolatey choco) {
+        freezeCheck();
         super.merge(choco);
         this.packageName = merge(this.packageName, choco.packageName);
         this.packageVersion = merge(this.packageVersion, choco.packageVersion);
@@ -98,6 +105,7 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
     }
 
     public void setPackageName(String packageName) {
+        freezeCheck();
         this.packageName = packageName;
     }
 
@@ -106,6 +114,7 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
     }
 
     public void setPackageVersion(String packageVersion) {
+        freezeCheck();
         this.packageVersion = packageVersion;
     }
 
@@ -114,6 +123,7 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
     }
 
     public void setUsername(String username) {
+        freezeCheck();
         this.username = username;
     }
 
@@ -122,6 +132,7 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
     }
 
     public void setApiKey(String apiKey) {
+        freezeCheck();
         this.apiKey = apiKey;
     }
 
@@ -130,6 +141,7 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
     }
 
     public void setTitle(String title) {
+        freezeCheck();
         this.title = title;
     }
 
@@ -138,6 +150,7 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
     }
 
     public void setIconUrl(String iconUrl) {
+        freezeCheck();
         this.iconUrl = iconUrl;
     }
 
@@ -146,6 +159,7 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
     }
 
     public void setSource(String source) {
+        freezeCheck();
         this.source = source;
     }
 
@@ -154,6 +168,7 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
     }
 
     public void setRemoteBuild(Boolean remoteBuild) {
+        freezeCheck();
         this.remoteBuild = remoteBuild;
     }
 
@@ -166,6 +181,7 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
     }
 
     public void setBucket(ChocolateyBucket bucket) {
+        freezeCheck();
         this.bucket.merge(bucket);
     }
 
@@ -200,7 +216,7 @@ public class Chocolatey extends AbstractRepositoryPackager<Chocolatey> {
 
     @Override
     public Set<String> getSupportedExtensions(Distribution distribution) {
-        return SUPPORTED.getOrDefault(distribution.getType(), Collections.emptySet());
+        return Collections.unmodifiableSet(SUPPORTED.getOrDefault(distribution.getType(), Collections.emptySet()));
     }
 
     @Override

@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.jreleaser.util.StringUtils.isBlank;
-import static org.jreleaser.util.StringUtils.isNotBlank;
 import static org.jreleaser.util.Templates.resolveTemplate;
 
 /**
@@ -56,7 +55,16 @@ public class Jlink extends AbstractJavaAssembler<Jlink> {
     }
 
     @Override
+    public void freeze() {
+        super.freeze();
+        targetJdks.forEach(Artifact::freeze);
+        jdk.freeze();
+        jdeps.freeze();
+    }
+
+    @Override
     public void merge(Jlink jlink) {
+        freezeCheck();
         super.merge(jlink);
         this.imageName = merge(this.imageName, jlink.imageName);
         this.imageNameTransform = merge(this.imageNameTransform, jlink.imageNameTransform);
@@ -103,6 +111,7 @@ public class Jlink extends AbstractJavaAssembler<Jlink> {
     }
 
     public void setImageName(String imageName) {
+        freezeCheck();
         this.imageName = imageName;
     }
 
@@ -111,102 +120,56 @@ public class Jlink extends AbstractJavaAssembler<Jlink> {
     }
 
     public void setImageNameTransform(String imageNameTransform) {
+        freezeCheck();
         this.imageNameTransform = imageNameTransform;
     }
 
 
     public Set<Artifact> getTargetJdks() {
-        return Artifact.sortArtifacts(targetJdks);
+        return freezeWrap(Artifact.sortArtifacts(targetJdks));
     }
 
     public void setTargetJdks(Set<Artifact> targetJdks) {
+        freezeCheck();
         this.targetJdks.clear();
         this.targetJdks.addAll(targetJdks);
     }
 
-    public void addTargetJdks(Set<Artifact> targetJdks) {
-        this.targetJdks.addAll(targetJdks);
-    }
-
     public void addTargetJdk(Artifact jdk) {
+        freezeCheck();
         if (null != jdk) {
             this.targetJdks.add(jdk);
         }
     }
 
     public Set<String> getModuleNames() {
-        return moduleNames;
+        return freezeWrap(moduleNames);
     }
 
     public void setModuleNames(Set<String> moduleNames) {
+        freezeCheck();
         this.moduleNames.clear();
         this.moduleNames.addAll(moduleNames);
     }
 
-    public void addModuleNames(List<String> moduleNames) {
-        this.moduleNames.addAll(moduleNames);
-    }
-
-    public void addModuleName(String moduleName) {
-        if (isNotBlank(moduleName)) {
-            this.moduleNames.add(moduleName.trim());
-        }
-    }
-
-    public void removeModuleName(String moduleName) {
-        if (isNotBlank(moduleName)) {
-            this.moduleNames.remove(moduleName.trim());
-        }
-    }
-
     public Set<String> getAdditionalModuleNames() {
-        return additionalModuleNames;
+        return freezeWrap(additionalModuleNames);
     }
 
     public void setAdditionalModuleNames(Set<String> additionalModuleNames) {
+        freezeCheck();
         this.additionalModuleNames.clear();
         this.additionalModuleNames.addAll(additionalModuleNames);
     }
 
-    public void addAdditionalModuleNames(List<String> additionalModuleNames) {
-        this.additionalModuleNames.addAll(additionalModuleNames);
-    }
-
-    public void addAdditionalModuleName(String additionalModuleName) {
-        if (isNotBlank(additionalModuleName)) {
-            this.additionalModuleNames.add(additionalModuleName.trim());
-        }
-    }
-
-    public void removeAdditionalModuleName(String additionalModuleName) {
-        if (isNotBlank(additionalModuleName)) {
-            this.additionalModuleNames.remove(additionalModuleName.trim());
-        }
-    }
-
     public List<String> getArgs() {
-        return args;
+        return freezeWrap(args);
     }
 
     public void setArgs(List<String> args) {
+        freezeCheck();
         this.args.clear();
         this.args.addAll(args);
-    }
-
-    public void addArgs(List<String> args) {
-        this.args.addAll(args);
-    }
-
-    public void addArg(String arg) {
-        if (isNotBlank(arg)) {
-            this.args.add(arg.trim());
-        }
-    }
-
-    public void removeArg(String arg) {
-        if (isNotBlank(arg)) {
-            this.args.remove(arg.trim());
-        }
     }
 
     public Boolean isCopyJars() {
@@ -214,6 +177,7 @@ public class Jlink extends AbstractJavaAssembler<Jlink> {
     }
 
     public void setCopyJars(Boolean copyJars) {
+        freezeCheck();
         this.copyJars = copyJars;
     }
 
@@ -240,17 +204,20 @@ public class Jlink extends AbstractJavaAssembler<Jlink> {
         props.put("copyJars", isCopyJars());
     }
 
-    public static class Jdeps extends AbstractModelObject<Jdeps> implements Domain {
+    public static class Jdeps extends AbstractModelObject<Jdeps> implements Domain, EnabledAware {
         private final Set<String> targets = new LinkedHashSet<>();
         private String multiRelease;
         private Boolean ignoreMissingDeps;
         private Boolean useWildcardInPath;
+        private Boolean enabled;
 
         @Override
         public void merge(Jdeps jdeps) {
+            freezeCheck();
             this.multiRelease = this.merge(this.multiRelease, jdeps.multiRelease);
             this.ignoreMissingDeps = this.merge(this.ignoreMissingDeps, jdeps.ignoreMissingDeps);
             this.useWildcardInPath = this.merge(this.useWildcardInPath, jdeps.useWildcardInPath);
+            this.enabled = merge(this.enabled, jdeps.enabled);
             setTargets(merge(this.targets, jdeps.targets));
         }
 
@@ -259,6 +226,7 @@ public class Jlink extends AbstractJavaAssembler<Jlink> {
         }
 
         public void setMultiRelease(String multiRelease) {
+            freezeCheck();
             this.multiRelease = multiRelease;
         }
 
@@ -267,6 +235,7 @@ public class Jlink extends AbstractJavaAssembler<Jlink> {
         }
 
         public void setIgnoreMissingDeps(Boolean ignoreMissingDeps) {
+            freezeCheck();
             this.ignoreMissingDeps = ignoreMissingDeps;
         }
 
@@ -279,6 +248,7 @@ public class Jlink extends AbstractJavaAssembler<Jlink> {
         }
 
         public void setUseWildcardInPath(Boolean useWildcardInPath) {
+            freezeCheck();
             this.useWildcardInPath = useWildcardInPath;
         }
 
@@ -287,33 +257,35 @@ public class Jlink extends AbstractJavaAssembler<Jlink> {
         }
 
         public Set<String> getTargets() {
-            return targets;
+            return freezeWrap(targets);
         }
 
         public void setTargets(Set<String> targets) {
+            freezeCheck();
             this.targets.clear();
             this.targets.addAll(targets);
         }
 
-        public void addTargets(List<String> targets) {
-            this.targets.addAll(targets);
+        @Override
+        public boolean isEnabled() {
+            return enabled != null && enabled;
         }
 
-        public void addTarget(String target) {
-            if (isNotBlank(target)) {
-                this.targets.add(target.trim());
-            }
+        @Override
+        public void setEnabled(Boolean enabled) {
+            freezeCheck();
+            this.enabled = enabled;
         }
 
-        public void removeTarget(String target) {
-            if (isNotBlank(target)) {
-                this.targets.remove(target.trim());
-            }
+        @Override
+        public boolean isEnabledSet() {
+            return enabled != null;
         }
 
         @Override
         public Map<String, Object> asMap(boolean full) {
             Map<String, Object> props = new LinkedHashMap<>();
+            props.put("enabled", isEnabled());
             props.put("multiRelease", multiRelease);
             props.put("ignoreMissingDeps", isIgnoreMissingDeps());
             props.put("useWildcardInPath", isUseWildcardInPath());

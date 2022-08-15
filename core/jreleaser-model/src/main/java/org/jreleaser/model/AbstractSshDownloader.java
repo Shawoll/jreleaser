@@ -21,7 +21,7 @@ import org.jreleaser.util.Env;
 
 import java.util.Map;
 
-import static org.jreleaser.util.CollectionUtils.newList;
+import static org.jreleaser.util.CollectionUtils.listOf;
 import static org.jreleaser.util.Constants.HIDE;
 import static org.jreleaser.util.Constants.UNSET;
 import static org.jreleaser.util.StringUtils.isBlank;
@@ -48,6 +48,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public void merge(S downloader) {
+        freezeCheck();
         super.merge(downloader);
         this.username = merge(this.username, downloader.username);
         this.password = merge(this.password, downloader.password);
@@ -64,7 +65,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public String getResolvedUsername() {
-        return Env.env(newList(
+        return Env.env(listOf(
                 getEnvPrefix() + "_" + Env.toVar(name) + "_USERNAME",
                 "SSH_" + Env.toVar(name) + "_USERNAME",
                 getEnvPrefix() + "_USERNAME",
@@ -74,7 +75,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public String getResolvedPassword() {
-        return Env.env(newList(
+        return Env.env(listOf(
                 getEnvPrefix() + "_" + Env.toVar(name) + "_PASSWORD",
                 "SSH_" + Env.toVar(name) + "_PASSWORD",
                 getEnvPrefix() + "_PASSWORD",
@@ -84,7 +85,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public String getResolvedHost() {
-        return Env.env(newList(
+        return Env.env(listOf(
                 getEnvPrefix() + "_" + Env.toVar(name) + "_HOST",
                 "SSH_" + Env.toVar(name) + "_HOST",
                 getEnvPrefix() + "_HOST",
@@ -94,7 +95,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public Integer getResolvedPort() {
-        String value = Env.env(newList(
+        String value = Env.env(listOf(
                 getEnvPrefix() + "_" + Env.toVar(name) + "_PORT",
                 "SSH_" + Env.toVar(name) + "_PORT",
                 getEnvPrefix() + "_PORT",
@@ -105,7 +106,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public String getResolvedPublicKey() {
-        return Env.env(newList(
+        return Env.env(listOf(
                 getEnvPrefix() + "_" + Env.toVar(name) + "_PUBLIC_KEY",
                 "SSH_" + Env.toVar(name) + "_PUBLIC_KEY",
                 getEnvPrefix() + "_PUBLIC_KEY",
@@ -115,7 +116,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public String getResolvedPrivateKey() {
-        return Env.env(newList(
+        return Env.env(listOf(
                 getEnvPrefix() + "_" + Env.toVar(name) + "_PRIVATE_KEY",
                 "SSH_" + Env.toVar(name) + "_PRIVATE_KEY",
                 getEnvPrefix() + "_PRIVATE_KEY",
@@ -125,7 +126,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public String getResolvedPassphrase() {
-        return Env.env(newList(
+        return Env.env(listOf(
                 getEnvPrefix() + "_" + Env.toVar(name) + "_PASSPHRASE",
                 "SSH_" + Env.toVar(name) + "_PASSPHRASE",
                 getEnvPrefix() + "_PASSPHRASE",
@@ -135,7 +136,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public String getResolvedFingerprint() {
-        return Env.env(newList(
+        return Env.env(listOf(
                 getEnvPrefix() + "_" + Env.toVar(name) + "_FINGERPRINT",
                 "SSH_" + Env.toVar(name) + "_FINGERPRINT",
                 getEnvPrefix() + "_FINGERPRINT",
@@ -150,6 +151,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public void setUsername(String username) {
+        freezeCheck();
         this.username = username;
     }
 
@@ -160,6 +162,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public void setPassword(String password) {
+        freezeCheck();
         this.password = password;
     }
 
@@ -170,6 +173,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public void setHost(String host) {
+        freezeCheck();
         this.host = host;
     }
 
@@ -180,6 +184,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public void setPort(Integer port) {
+        freezeCheck();
         this.port = port;
     }
 
@@ -190,6 +195,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public void setKnownHostsFile(String knownHostsFile) {
+        freezeCheck();
         this.knownHostsFile = knownHostsFile;
     }
 
@@ -200,6 +206,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public void setPublicKey(String publicKey) {
+        freezeCheck();
         this.publicKey = publicKey;
     }
 
@@ -210,6 +217,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public void setPrivateKey(String privateKey) {
+        freezeCheck();
         this.privateKey = privateKey;
     }
 
@@ -220,6 +228,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public void setPassphrase(String passphrase) {
+        freezeCheck();
         this.passphrase = passphrase;
     }
 
@@ -230,6 +239,7 @@ public abstract class AbstractSshDownloader<S extends AbstractSshDownloader<S>> 
 
     @Override
     public void setFingerprint(String fingerprint) {
+        freezeCheck();
         this.fingerprint = fingerprint;
     }
 

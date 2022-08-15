@@ -23,7 +23,6 @@ import org.jreleaser.model.Archive;
 import org.jreleaser.model.Distribution;
 import org.jreleaser.model.FileSet;
 import org.jreleaser.model.JReleaserContext;
-import org.jreleaser.model.Platform;
 import org.jreleaser.util.Errors;
 
 import java.util.Map;
@@ -58,11 +57,13 @@ public abstract class ArchiveValidator extends Validator {
             return;
         }
 
-        Platform platform = archive.getPlatform().mergeValues(context.getModel().getPlatform());
-        archive.setPlatform(platform);
+        archive.setPlatform(archive.getPlatform().mergeValues(context.getModel().getPlatform()));
 
         if (null == archive.getDistributionType()) {
             archive.setDistributionType(Distribution.DistributionType.BINARY);
+        }
+        if (null == archive.getStereotype()) {
+            archive.setStereotype(context.getModel().getProject().getStereotype());
         }
 
         if (isBlank(archive.getArchiveName())) {

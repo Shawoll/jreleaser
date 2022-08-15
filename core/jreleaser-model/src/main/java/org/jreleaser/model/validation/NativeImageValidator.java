@@ -24,7 +24,6 @@ import org.jreleaser.model.Artifact;
 import org.jreleaser.model.FileSet;
 import org.jreleaser.model.JReleaserContext;
 import org.jreleaser.model.NativeImage;
-import org.jreleaser.model.Platform;
 import org.jreleaser.util.Errors;
 import org.jreleaser.util.PlatformUtils;
 
@@ -60,6 +59,10 @@ public abstract class NativeImageValidator extends Validator {
         }
         if (!nativeImage.resolveEnabled(context.getModel().getProject())) return;
 
+        if (null == nativeImage.getStereotype()) {
+            nativeImage.setStereotype(context.getModel().getProject().getStereotype());
+        }
+
         if (isBlank(nativeImage.getName())) {
             errors.configuration(RB.$("validation_must_not_be_blank", "nativeImage.name"));
             return;
@@ -70,8 +73,7 @@ public abstract class NativeImageValidator extends Validator {
             return;
         }
 
-        Platform platform = nativeImage.getPlatform().mergeValues(context.getModel().getPlatform());
-        nativeImage.setPlatform(platform);
+        nativeImage.setPlatform(nativeImage.getPlatform().mergeValues(context.getModel().getPlatform()));
 
         if (isBlank(nativeImage.getExecutable())) {
             nativeImage.setExecutable(nativeImage.getName());

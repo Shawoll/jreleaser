@@ -17,6 +17,7 @@
  */
 package org.jreleaser.model;
 
+import com.github.mustachejava.TemplateFunction;
 import org.jreleaser.bundle.RB;
 import org.jreleaser.util.CalVer;
 import org.jreleaser.util.ChronVer;
@@ -32,10 +33,12 @@ import org.jreleaser.util.SemVer;
 import org.jreleaser.util.Version;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.jreleaser.util.JReleaserOutput.nag;
 import static org.jreleaser.util.MustacheUtils.applyTemplates;
 import static org.jreleaser.util.StringUtils.getClassNameForLowerCaseHyphenSeparatedName;
 import static org.jreleaser.util.StringUtils.isBlank;
@@ -58,39 +61,54 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
 
     private final List<String> authors = new ArrayList<>();
     private final List<String> tags = new ArrayList<>();
+    private final List<String> maintainers = new ArrayList<>();
     private final Map<String, Object> extraProperties = new LinkedHashMap<>();
+    private final Links links = new Links();
     private final Java java = new Java();
     private final Snapshot snapshot = new Snapshot();
+    private final List<Screenshot> screenshots = new ArrayList<>();
     private String name;
     private String version;
     private VersionPattern versionPattern = new VersionPattern();
     private String description;
     private String longDescription;
-    private String website;
     private String license;
-    private String licenseUrl;
+    private String inceptionYear;
     private String copyright;
     private String vendor;
-    private String docsUrl;
+    private Stereotype stereotype = Stereotype.NONE;
+
+    @Override
+    public void freeze() {
+        super.freeze();
+        links.freeze();
+        java.freeze();
+        snapshot.freeze();
+        versionPattern.freeze();
+        screenshots.forEach(ModelObject::freeze);
+    }
 
     @Override
     public void merge(Project project) {
+        freezeCheck();
         this.name = merge(this.name, project.name);
         this.version = merge(this.version, project.version);
         this.versionPattern = merge(this.versionPattern, project.versionPattern);
         this.description = merge(this.description, project.description);
         this.longDescription = merge(this.longDescription, project.longDescription);
-        this.website = merge(this.website, project.website);
         this.license = merge(this.license, project.license);
-        this.licenseUrl = merge(this.licenseUrl, project.licenseUrl);
+        this.inceptionYear = merge(this.inceptionYear, project.inceptionYear);
         this.copyright = merge(this.copyright, project.copyright);
         this.vendor = merge(this.vendor, project.vendor);
-        this.docsUrl = merge(this.docsUrl, project.docsUrl);
+        this.stereotype = merge(this.stereotype, project.stereotype);
         setJava(project.java);
         setSnapshot(project.snapshot);
         setAuthors(merge(this.authors, project.authors));
         setTags(merge(this.tags, project.tags));
+        setMaintainers(merge(this.maintainers, project.maintainers));
         setExtraProperties(merge(this.extraProperties, project.extraProperties));
+        setLinks(project.links);
+        setScreenshots(merge(this.screenshots, project.screenshots));
     }
 
     @Override
@@ -129,6 +147,7 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
     }
 
     public void setName(String name) {
+        freezeCheck();
         this.name = name;
     }
 
@@ -137,6 +156,7 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
     }
 
     public void setVersion(String version) {
+        freezeCheck();
         this.version = version;
     }
 
@@ -145,11 +165,11 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
     }
 
     public void setVersionPattern(VersionPattern versionPattern) {
-        this.versionPattern = versionPattern;
+        this.versionPattern.merge(versionPattern);
     }
 
     public void setVersionPattern(String str) {
-        this.versionPattern = VersionPattern.of(str);
+        setVersionPattern(VersionPattern.of(str));
     }
 
     public VersionPattern versionPattern() {
@@ -169,6 +189,7 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
     }
 
     public void setDescription(String description) {
+        freezeCheck();
         this.description = description;
     }
 
@@ -177,15 +198,19 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
     }
 
     public void setLongDescription(String longDescription) {
+        freezeCheck();
         this.longDescription = longDescription;
     }
 
+    @Deprecated
     public String getWebsite() {
-        return website;
+        return links.getHomepage();
     }
 
+    @Deprecated
     public void setWebsite(String website) {
-        this.website = website;
+        nag("project.website is deprecated since 1.2.0 and will be removed in 2.0.0. Use project.links.homepage instead");
+        links.setHomepage(website);
     }
 
     public String getLicense() {
@@ -193,15 +218,28 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
     }
 
     public void setLicense(String license) {
+        freezeCheck();
         this.license = license;
     }
 
+    @Deprecated
     public String getLicenseUrl() {
-        return licenseUrl;
+        return links.getLicense();
     }
 
+    @Deprecated
     public void setLicenseUrl(String licenseUrl) {
-        this.licenseUrl = licenseUrl;
+        nag("project.licenseUrl is deprecated since 1.2.0 and will be removed in 2.0.0. Use project.links.license instead");
+        links.setLicense(licenseUrl);
+    }
+
+    public String getInceptionYear() {
+        return inceptionYear;
+    }
+
+    public void setInceptionYear(String inceptionYear) {
+        freezeCheck();
+        this.inceptionYear = inceptionYear;
     }
 
     public String getCopyright() {
@@ -209,6 +247,7 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
     }
 
     public void setCopyright(String copyright) {
+        freezeCheck();
         this.copyright = copyright;
     }
 
@@ -217,15 +256,49 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
     }
 
     public void setVendor(String vendor) {
+        freezeCheck();
         this.vendor = vendor;
     }
 
+    @Deprecated
     public String getDocsUrl() {
-        return docsUrl;
+        return links.getDocumentation();
     }
 
+    @Deprecated
     public void setDocsUrl(String docsUrl) {
-        this.docsUrl = docsUrl;
+        nag("project.docsUrl is deprecated since 1.2.0 and will be removed in 2.0.0. Use project.links.documentation instead");
+        links.setDocumentation(docsUrl);
+    }
+
+    public Stereotype getStereotype() {
+        return stereotype;
+    }
+
+    public void setStereotype(Stereotype stereotype) {
+        freezeCheck();
+        this.stereotype = stereotype;
+    }
+
+    public void setStereotype(String str) {
+        setStereotype(Stereotype.of(str));
+    }
+
+    public List<Screenshot> getScreenshots() {
+        return freezeWrap(screenshots);
+    }
+
+    public void setScreenshots(List<Screenshot> screenshots) {
+        freezeCheck();
+        this.screenshots.clear();
+        this.screenshots.addAll(screenshots);
+    }
+
+    public void addScreenshot(Screenshot screenshot) {
+        freezeCheck();
+        if (null != screenshot) {
+            this.screenshots.add(screenshot);
+        }
     }
 
     public Java getJava() {
@@ -238,68 +311,58 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
 
     @Override
     public Map<String, Object> getExtraProperties() {
-        return extraProperties;
+        return freezeWrap(extraProperties);
     }
 
     @Override
     public void setExtraProperties(Map<String, Object> extraProperties) {
+        freezeCheck();
         this.extraProperties.clear();
         this.extraProperties.putAll(extraProperties);
     }
 
     @Override
     public void addExtraProperties(Map<String, Object> extraProperties) {
+        freezeCheck();
         this.extraProperties.putAll(extraProperties);
     }
 
     public List<String> getAuthors() {
-        return authors;
+        return freezeWrap(authors);
     }
 
     public void setAuthors(List<String> authors) {
+        freezeCheck();
         this.authors.clear();
         this.authors.addAll(authors);
     }
 
-    public void addAuthors(List<String> authors) {
-        this.authors.addAll(authors);
-    }
-
-    public void addAuthor(String author) {
-        if (isNotBlank(author)) {
-            this.authors.add(author.trim());
-        }
-    }
-
-    public void removeAuthor(String author) {
-        if (isNotBlank(author)) {
-            this.authors.remove(author.trim());
-        }
-    }
-
     public List<String> getTags() {
-        return tags;
+        return freezeWrap(tags);
     }
 
     public void setTags(List<String> tags) {
+        freezeCheck();
         this.tags.clear();
         this.tags.addAll(tags);
     }
 
-    public void addTags(List<String> tags) {
-        this.tags.addAll(tags);
+    public List<String> getMaintainers() {
+        return freezeWrap(maintainers);
     }
 
-    public void addTag(String tag) {
-        if (isNotBlank(tag)) {
-            this.tags.add(tag.trim());
-        }
+    public void setMaintainers(List<String> maintainers) {
+        freezeCheck();
+        this.maintainers.clear();
+        this.maintainers.addAll(maintainers);
     }
 
-    public void removeTag(String tag) {
-        if (isNotBlank(tag)) {
-            this.tags.remove(tag.trim());
-        }
+    public Links getLinks() {
+        return links;
+    }
+
+    public void setLinks(Links links) {
+        this.links.merge(links);
     }
 
     @Override
@@ -311,14 +374,21 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
         map.put("snapshot", snapshot.asMap(full));
         map.put("description", description);
         map.put("longDescription", longDescription);
-        map.put("website", website);
-        map.put("docsUrl", docsUrl);
         map.put("license", license);
-        map.put("licenseUrl", licenseUrl);
+        map.put("inceptionYear", inceptionYear);
         map.put("copyright", copyright);
         map.put("vendor", vendor);
         map.put("authors", authors);
         map.put("tags", tags);
+        map.put("maintainers", maintainers);
+        map.put("stereotype", stereotype);
+        map.put("links", links.asMap(full));
+        Map<String, Map<String, Object>> sm = new LinkedHashMap<>();
+        int i = 0;
+        for (Screenshot screenshot : screenshots) {
+            sm.put("screenshot " + (i++), screenshot.asMap(full));
+        }
+        map.put("screenshots", sm);
         map.put("extraProperties", getResolvedExtraProperties());
         if (java.isEnabled()) {
             map.put("java", java.asMap(full));
@@ -327,6 +397,17 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
     }
 
     public void parseVersion() {
+        boolean isFrozen = frozen;
+
+        try {
+            frozen = false;
+            doParseVersion();
+        } finally {
+            frozen = isFrozen;
+        }
+    }
+
+    private void doParseVersion() {
         String v = getResolvedVersion();
         if (isBlank(v)) return;
 
@@ -477,6 +558,7 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
 
         @Override
         public void merge(Snapshot snapshot) {
+            freezeCheck();
             this.enabled = this.merge(this.enabled, snapshot.enabled);
             this.pattern = this.merge(this.pattern, snapshot.pattern);
             this.label = this.merge(this.label, snapshot.label);
@@ -529,6 +611,7 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
         }
 
         public void setPattern(String pattern) {
+            freezeCheck();
             this.pattern = pattern;
         }
 
@@ -537,6 +620,7 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
         }
 
         public void setLabel(String label) {
+            freezeCheck();
             this.label = label;
         }
 
@@ -549,6 +633,7 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
         }
 
         public void setFullChangelog(Boolean fullChangelog) {
+            freezeCheck();
             this.fullChangelog = fullChangelog;
         }
 
@@ -574,6 +659,7 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
             props.putAll(model.getEnvironment().getSourcedProperties());
             props.put(Constants.KEY_PROJECT_NAME, project.getName());
             props.put(Constants.KEY_PROJECT_NAME_CAPITALIZED, getClassNameForLowerCaseHyphenSeparatedName(project.getName()));
+            props.put(Constants.KEY_PROJECT_STEREOTYPE, project.getStereotype());
             props.put(Constants.KEY_PROJECT_VERSION, project.getVersion());
             props.put(Constants.KEY_PROJECT_SNAPSHOT, String.valueOf(project.isSnapshot()));
             if (isNotBlank(project.getDescription())) {
@@ -582,17 +668,11 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
             if (isNotBlank(project.getLongDescription())) {
                 props.put(Constants.KEY_PROJECT_LONG_DESCRIPTION, MustacheUtils.passThrough(project.getLongDescription()));
             }
-            if (isNotBlank(project.getWebsite())) {
-                props.put(Constants.KEY_PROJECT_WEBSITE, project.getWebsite());
-            }
             if (isNotBlank(project.getLicense())) {
                 props.put(Constants.KEY_PROJECT_LICENSE, project.getLicense());
             }
-            if (isNotBlank(project.getLicense())) {
-                props.put(Constants.KEY_PROJECT_LICENSE_URL, project.getLicenseUrl());
-            }
-            if (isNotBlank(project.getDocsUrl())) {
-                props.put(Constants.KEY_PROJECT_DOCS_URL, project.getDocsUrl());
+            if (null != project.getInceptionYear()) {
+                props.put(Constants.KEY_PROJECT_INCEPTION_YEAR, project.getInceptionYear());
             }
             if (isNotBlank(project.getCopyright())) {
                 props.put(Constants.KEY_PROJECT_COPYRIGHT, project.getCopyright());
@@ -600,6 +680,7 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
             if (isNotBlank(project.getVendor())) {
                 props.put(Constants.KEY_PROJECT_VENDOR, project.getVendor());
             }
+            project.getLinks().fillProps(props);
 
             if (project.getJava().isEnabled()) {
                 props.putAll(project.getJava().getResolvedExtraProperties());
@@ -631,6 +712,203 @@ public class Project extends AbstractModelObject<Project> implements Domain, Ext
             MustacheUtils.applyFunctions(props);
 
             return props;
+        }
+    }
+
+    public static class Links extends AbstractModelObject<Project.Links> implements Domain {
+        private static final String PROJECT_LINK = "projectLink";
+
+        private String homepage;
+        private String documentation;
+        private String license;
+        private String bugTracker;
+        private String faq;
+        private String help;
+        private String donation;
+        private String translate;
+        private String contact;
+        private String vcsBrowser;
+        private String contribute;
+
+        @Override
+        public void merge(Project.Links source) {
+            freezeCheck();
+            this.homepage = merge(this.homepage, source.homepage);
+            this.documentation = merge(this.documentation, source.documentation);
+            this.license = merge(this.license, source.license);
+            this.bugTracker = merge(this.bugTracker, source.bugTracker);
+            this.faq = merge(this.faq, source.faq);
+            this.help = merge(this.help, source.help);
+            this.donation = merge(this.donation, source.donation);
+            this.translate = merge(this.translate, source.translate);
+            this.contact = merge(this.contact, source.contact);
+            this.vcsBrowser = merge(this.vcsBrowser, source.vcsBrowser);
+            this.contribute = merge(this.contribute, source.contribute);
+        }
+
+        public String getHomepage() {
+            return homepage;
+        }
+
+        public void setHomepage(String homepage) {
+            freezeCheck();
+            this.homepage = homepage;
+        }
+
+        public String getDocumentation() {
+            return documentation;
+        }
+
+        public void setDocumentation(String documentation) {
+            freezeCheck();
+            this.documentation = documentation;
+        }
+
+        public String getLicense() {
+            return license;
+        }
+
+        public void setLicense(String license) {
+            freezeCheck();
+            this.license = license;
+        }
+
+        public String getBugTracker() {
+            return bugTracker;
+        }
+
+        public void setBugTracker(String bugTracker) {
+            freezeCheck();
+            this.bugTracker = bugTracker;
+        }
+
+        public String getFaq() {
+            return faq;
+        }
+
+        public void setFaq(String faq) {
+            freezeCheck();
+            this.faq = faq;
+        }
+
+        public String getHelp() {
+            return help;
+        }
+
+        public void setHelp(String help) {
+            freezeCheck();
+            this.help = help;
+        }
+
+        public String getDonation() {
+            return donation;
+        }
+
+        public void setDonation(String donation) {
+            freezeCheck();
+            this.donation = donation;
+        }
+
+        public String getTranslate() {
+            return translate;
+        }
+
+        public void setTranslate(String translate) {
+            freezeCheck();
+            this.translate = translate;
+        }
+
+        public String getContact() {
+            return contact;
+        }
+
+        public void setContact(String contact) {
+            freezeCheck();
+            this.contact = contact;
+        }
+
+        public String getVcsBrowser() {
+            return vcsBrowser;
+        }
+
+        public void setVcsBrowser(String vcsBrowser) {
+            freezeCheck();
+            this.vcsBrowser = vcsBrowser;
+        }
+
+        public String getContribute() {
+            return contribute;
+        }
+
+        public void setContribute(String contribute) {
+            freezeCheck();
+            this.contribute = contribute;
+        }
+
+        @Override
+        public Map<String, Object> asMap(boolean full) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            if (isNotBlank(homepage)) map.put("homepage", homepage);
+            if (isNotBlank(documentation)) map.put("documentation", documentation);
+            if (isNotBlank(license)) map.put("license", license);
+            if (isNotBlank(bugTracker)) map.put("bugTracker", bugTracker);
+            if (isNotBlank(vcsBrowser)) map.put("vcsBrowser", vcsBrowser);
+            if (isNotBlank(faq)) map.put("faq", faq);
+            if (isNotBlank(help)) map.put("help", help);
+            if (isNotBlank(donation)) map.put("donation", donation);
+            if (isNotBlank(translate)) map.put("translate", translate);
+            if (isNotBlank(contact)) map.put("contact", contact);
+            if (isNotBlank(contribute)) map.put("contribute", contribute);
+            return map;
+        }
+
+        public void fillProps(Map<String, Object> props) {
+            if (isNotBlank(homepage)) props.put(PROJECT_LINK + "Homepage", homepage);
+            if (isNotBlank(documentation)) props.put(PROJECT_LINK + "Documentation", documentation);
+            if (isNotBlank(license)) props.put(PROJECT_LINK + "License", license);
+            if (isNotBlank(bugTracker)) props.put(PROJECT_LINK + "BugTracker", bugTracker);
+            if (isNotBlank(vcsBrowser)) props.put(PROJECT_LINK + "VcsBrowser", vcsBrowser);
+            if (isNotBlank(faq)) props.put(PROJECT_LINK + "Faq", faq);
+            if (isNotBlank(help)) props.put(PROJECT_LINK + "Help", help);
+            if (isNotBlank(donation)) props.put(PROJECT_LINK + "Donation", donation);
+            if (isNotBlank(translate)) props.put(PROJECT_LINK + "translate", translate);
+            if (isNotBlank(contact)) props.put(PROJECT_LINK + "contact", contact);
+            if (isNotBlank(contribute)) props.put(PROJECT_LINK + "contribute", contribute);
+            if (isNotBlank(homepage)) props.put(Constants.KEY_PROJECT_WEBSITE, homepage);
+            if (isNotBlank(documentation)) props.put(Constants.KEY_PROJECT_DOCS_URL, documentation);
+            if (isNotBlank(license)) props.put(Constants.KEY_PROJECT_LICENSE_URL, license);
+        }
+
+        public Collection<AppdataLink> asAppdataLinks() {
+            List<AppdataLink> links = new ArrayList<>();
+            if (isNotBlank(homepage)) links.add(new AppdataLink("homepage", homepage));
+            if (isNotBlank(bugTracker)) links.add(new AppdataLink("bugtracker", bugTracker));
+            if (isNotBlank(faq)) links.add(new AppdataLink("faq", faq));
+            if (isNotBlank(help)) links.add(new AppdataLink("help", help));
+            if (isNotBlank(donation)) links.add(new AppdataLink("donation", donation));
+            if (isNotBlank(translate)) links.add(new AppdataLink("translate", translate));
+            if (isNotBlank(contact)) links.add(new AppdataLink("contact", contact));
+            if (isNotBlank(vcsBrowser)) links.add(new AppdataLink("vcs-browser", vcsBrowser));
+            if (isNotBlank(contribute)) links.add(new AppdataLink("contribute", contribute));
+            return links;
+        }
+
+        public static final class AppdataLink {
+            private String type;
+            private String url;
+
+            public AppdataLink(String type, String url) {
+                this.type = type;
+                this.url = url;
+            }
+
+            public String getType() {
+                return type;
+            }
+
+            public TemplateFunction getUrl() {
+                return (s) -> url;
+            }
         }
     }
 }

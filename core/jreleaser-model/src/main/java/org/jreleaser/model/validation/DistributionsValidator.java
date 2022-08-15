@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
 import static org.jreleaser.model.GitService.KEY_SKIP_RELEASE_SIGNATURES;
+import static org.jreleaser.model.validation.AppImageValidator.validateAppImage;
+import static org.jreleaser.model.validation.AsdfValidator.validateAsdf;
 import static org.jreleaser.model.validation.BrewValidator.postValidateBrew;
 import static org.jreleaser.model.validation.BrewValidator.validateBrew;
 import static org.jreleaser.model.validation.ChocolateyValidator.postValidateChocolatey;
@@ -72,7 +74,7 @@ public abstract class DistributionsValidator extends Validator {
                 distribution.setName(e.getKey());
             }
             if (context.isDistributionIncluded(distribution)) {
-                validateDistribution(context, distribution, errors);
+                validateDistribution(context, mode, distribution, errors);
             } else {
                 distribution.setActive(Active.NEVER);
                 distribution.resolveEnabled(context.getModel().getProject());
@@ -84,7 +86,7 @@ public abstract class DistributionsValidator extends Validator {
         postValidateSdkman(context, errors);
     }
 
-    private static void validateDistribution(JReleaserContext context, Distribution distribution, Errors errors) {
+    private static void validateDistribution(JReleaserContext context, JReleaserContext.Mode mode, Distribution distribution, Errors errors) {
         context.getLogger().debug("distribution.{}", distribution.getName());
 
         if (!distribution.isActiveSet()) {
@@ -105,6 +107,9 @@ public abstract class DistributionsValidator extends Validator {
         if (null == distribution.getType()) {
             errors.configuration(RB.$("validation_must_not_be_null", "distribution." + distribution.getName() + ".type"));
             return;
+        }
+        if (null == distribution.getStereotype()) {
+            distribution.setStereotype(context.getModel().getProject().getStereotype());
         }
         if (isBlank(distribution.getExecutable().getName())) {
             distribution.getExecutable().setName(distribution.getName());
@@ -176,6 +181,8 @@ public abstract class DistributionsValidator extends Validator {
                 });
         });
 
+        validateAppImage(context, mode, distribution, distribution.getAppImage(), errors);
+        validateAsdf(context, distribution, distribution.getAsdf(), errors);
         validateBrew(context, distribution, distribution.getBrew(), errors);
         validateChocolatey(context, distribution, distribution.getChocolatey(), errors);
         validateDocker(context, distribution, distribution.getDocker(), errors);

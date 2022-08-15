@@ -23,7 +23,6 @@ import org.jreleaser.model.Artifact;
 import org.jreleaser.model.FileSet;
 import org.jreleaser.model.JReleaserContext;
 import org.jreleaser.model.Jlink;
-import org.jreleaser.model.Platform;
 import org.jreleaser.model.Project;
 import org.jreleaser.util.Errors;
 import org.jreleaser.util.PlatformUtils;
@@ -64,14 +63,16 @@ public abstract class JlinkValidator extends Validator {
             errors.configuration(RB.$("validation_must_not_be_blank", "jlink.name"));
             return;
         }
+        if (null == jlink.getStereotype()) {
+            jlink.setStereotype(context.getModel().getProject().getStereotype());
+        }
 
         context.getLogger().debug("jlink.{}.java", jlink.getName());
         if (!validateJava(context, jlink, errors)) {
             return;
         }
 
-        Platform platform = jlink.getPlatform().mergeValues(context.getModel().getPlatform());
-        jlink.setPlatform(platform);
+        jlink.setPlatform(jlink.getPlatform().mergeValues(context.getModel().getPlatform()));
 
         if (isBlank(jlink.getImageName())) {
             jlink.setImageName(jlink.getJava().getGroupId() + "." +
@@ -166,6 +167,18 @@ public abstract class JlinkValidator extends Validator {
             for (FileSet fileSet : jlink.getFileSets()) {
                 validateFileSet(context, mode, jlink, fileSet, i++, errors);
             }
+        }
+
+        if (!jlink.getJdeps().isEnabledSet()) {
+            jlink.getJdeps().setEnabled(true);
+        }
+
+        if (!jlink.getJdeps().isEnabled() && jlink.getModuleNames().isEmpty()) {
+            jlink.getModuleNames().add("java.base");
+        }
+
+        if (!jlink.getModuleNames().isEmpty()) {
+            jlink.getJdeps().setEnabled(false);
         }
     }
 
